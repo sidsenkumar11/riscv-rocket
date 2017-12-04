@@ -6,6 +6,27 @@ This page documents the setup process for building Rocket Cores to work on Zynq 
 
 Last update: 12/4/17
 
+# Table of Contents
+
+   * [Rocket Core on Zynq FPGAs](#rocket-core-on-zynq-fpgas)
+      * [Introduction](#introduction)
+         * [Terms and Knowledge](#terms-and-knowledge)
+            * [FPGAs and Zynq-7000](#fpgas-and-zynq-7000)
+            * [ISAs and RISC-V](#isas-and-risc-v)
+         * [Chisel Framework](#chisel-framework)
+            * [Installing Chisel](#installing-chisel)
+            * [Chisel Tutorial](#chisel-tutorial)
+         * [Rocket Chip Generator Installation](#rocket-chip-generator-installation)
+      * [Rocket Chip Project Structure](#rocket-chip-project-structure)
+         * [Rocket Chip Generator Repository](#rocket-chip-generator-repository)
+         * [Rocket Chip on Zynq FPGAs](#rocket-chip-on-zynq-fpgas)
+            * [System Stack](#system-stack)
+            * [RISC-V Binaries on Pre-Built Images for ARM Core](#risc-v-binaries-on-pre-built-images-for-arm-core)
+         * [Generating Pre-Built Binaries and Running on Zybo](#generating-pre-built-binaries-and-running-on-zybo)
+      * [Rocket Chip Architecture](#rocket-chip-architecture)
+         * [Configuring Rocket Chip Memory](#configuring-rocket-chip-memory)
+         * [Fence Registers](#fence-registers)
+
 ## Introduction
 
 ### Terms and Knowledge
@@ -37,8 +58,8 @@ RISC-V (pronounced “risk-five”) is a new ISA designed to support computer ar
 The base instructions of the RISC-V ISA are similar to those of other RISC instruction sets, such as MIPS or OpenRISC. For a quick overview of the ISA instructions, page 2 of <a href="http://www-inst.eecs.berkeley.edu/~cs250/fa13/handouts/lab2-riscv.pdf" target="_blank">http://www-inst.eecs.berkeley.edu/~cs250/fa13/handouts/lab2-riscv.pdf</a> has been reproduced here.
 
 <p align="center">
-![RISCV-v1](images/riscv-v1.png)
-![RISCV-v1](images/riscv-v2.png)
+![RISCV-v1](images/riscv-v1.png?raw=true)
+![RISCV-v1](images/riscv-v2.png?raw=true)
 </p>
 
 ### Chisel Framework
@@ -219,7 +240,7 @@ Once you have generated the binaries and placed them on the SD card, eject the S
 To interface with the board via the USB cable, I downloaded and installed the program <a href="https://ttssh2.osdn.jp/index.html.en" target="_blank">Tera Term</a>. After installing Tera Term, configure it so that its Serial settings match the following. The port may be different but the important value to configure is the Baud rate, which defines the rate at which information may be transferred on the channel.
 
 <p align="center">
-![RISCV-v1](images/Tera_Term_settings.png)
+![RISCV-v1](images/Tera_Term_settings.png?raw=true)
 </p>
 
 After downloading Tera Term and modifying the settings, plug in the Zybo via the USB cable. Turn the switch on and wait for a minute to let the Linux system boot up. Finally, start Tera Term and create a new serial connection. You should be asked for a login prompt; use the username "root" and password "root". You are now accessing the Linux system running on the ARM core and can use the `fesvr-zynq` program to interact with the Rocket Core. You could even mount the SD card and start running RISC-V Linux by doing the following.
@@ -232,7 +253,7 @@ mount /dev/mmcblk0p1 /sdcard
 
 ## Rocket Chip Architecture
 
-An overview of the Rocket Core architecture can be seen <a href="http://www.lowrisc.org/docs/tagged-memory-v0.1/rocket-core/" target="_blank">here</a> but in the following sections, we will attempt to summmarize our understanding.
+An overview of the Rocket Core architecture can be seen <a href="http://www.lowrisc.org/docs/tagged-memory-v0.1/rocket-core/" target="_blank">here</a> but in the following sections, we will attempt to summmarize our understanding. Rocket Chip is an in-order chip generator; therefore it does not have a Load-Store Buffer for memory accesses. For an out-of-order chip generator, see the <a href="https://github.com/ucb-bar/riscv-boom" target="_blank">BOOM</a> project.
 
 ### Configuring Rocket Chip Memory
 To change the configuration of Rocket Chip, you first need to change the configuration file and modify/add what configuration you want.
@@ -252,4 +273,99 @@ make project
 make fpga-images-zybo/boot.bin
 ```
 
-This should create the project, generate the bitstream, and create a new `boot.bin` to copy onto the SD card that can then be inserted onto the board.
+This should create the project, generate the bitstream, and create a new `boot.bin` to copy onto the SD card that can then be inserted onto the board. To test different memory configurations, Rocket Chip provides us with groundtest/Tracegen.scala. It can generate traces that emit memory accesses in the code to ensure that memory works as it should.
+
+### Fence Registers
+
+Memory fence instructions are supported in the pipeline as they are supported by the RISC-V ISA. The FENCE ensures that all operations before the fence are observed before any operation after the fence. This may be necessary at times since RISC-V allows the order of loads and stores performed by one thread to be different when seen by another to increase memory system performance.
+
+Memory fences are detected in the ID stage (rocket/IDecode.scala) as instructions may have bits for fence operations. The detected value is passed along the pipeline as `stage_reg_sfence` or `stage_sfence`. For example, we can see the following code in the mem stage: `mem_reg_sfence := ex_sfence`.
+
+We believe that when the fence instruction is encountered, the pipeline just stalls by inserting NOPs as indicated by the following code:
+
+```
+when (ex_ctrl.rxs2 && (ex_ctrl.mem || ex_ctrl.rocc || ex_sfence)) {
+	val typ = Mux(ex_ctrl.rocc, log2Ceil(xLen/8).U, ex_ctrl.mem_type)
+	mem_reg_rs2 := new StoreGen(typ, 0.U, ex_rs(1), coreDataBytes).data
+}
+```
+
+We have also seen the fence operation in rocket/DCache.scala and believe it might be used to flush the TLB upon receiving the fence.
+
+Finally, `allow_sfence_vma` in rocket/CSR.scala seems to be used to allow sfence operations from the OS in the Control Status Register.
+
+The mem stage code has been reproduced here for reference, though the pipeline core can be found in Rocket Core.
+```
+  // memory stage
+  val mem_pc_valid = mem_reg_valid || mem_reg_replay || mem_reg_xcpt_interrupt
+  val mem_br_target = mem_reg_pc.asSInt +
+    Mux(mem_ctrl.branch && mem_br_taken, ImmGen(IMM_SB, mem_reg_inst),
+    Mux(mem_ctrl.jal, ImmGen(IMM_UJ, mem_reg_inst),
+    Mux(mem_reg_rvc, SInt(2), SInt(4))))
+  val mem_npc = (Mux(mem_ctrl.jalr || mem_reg_sfence, encodeVirtualAddress(mem_reg_wdata, mem_reg_wdata).asSInt, mem_br_target) & SInt(-2)).asUInt
+  val mem_wrong_npc =
+    Mux(ex_pc_valid, mem_npc =/= ex_reg_pc,
+    Mux(ibuf.io.inst(0).valid || ibuf.io.imem.valid, mem_npc =/= ibuf.io.pc, Bool(true)))
+  val mem_npc_misaligned = !csr.io.status.isa('c'-'a') && mem_npc(1) && !mem_reg_sfence
+  val mem_int_wdata = Mux(!mem_reg_xcpt && (mem_ctrl.jalr ^ mem_npc_misaligned), mem_br_target, mem_reg_wdata.asSInt).asUInt
+  val mem_cfi = mem_ctrl.branch || mem_ctrl.jalr || mem_ctrl.jal
+  val mem_cfi_taken = (mem_ctrl.branch && mem_br_taken) || mem_ctrl.jalr || mem_ctrl.jal
+  val mem_direction_misprediction = mem_ctrl.branch && mem_br_taken =/= (usingBTB && mem_reg_btb_resp.taken)
+  val mem_misprediction = if (usingBTB) mem_wrong_npc else mem_cfi_taken
+  take_pc_mem := mem_reg_valid && (mem_misprediction || mem_reg_sfence)
+
+  mem_reg_valid := !ctrl_killx
+  mem_reg_replay := !take_pc_mem_wb && replay_ex
+  mem_reg_xcpt := !ctrl_killx && ex_xcpt
+  mem_reg_xcpt_interrupt := !take_pc_mem_wb && ex_reg_xcpt_interrupt
+
+  // on pipeline flushes, cause mem_npc to hold the sequential npc, which
+  // will drive the W-stage npc mux
+  when (mem_reg_valid && mem_reg_flush_pipe) {
+    mem_reg_sfence := false
+  }.elsewhen (ex_pc_valid) {
+    mem_ctrl := ex_ctrl
+    mem_reg_rvc := ex_reg_rvc
+    mem_reg_load := ex_ctrl.mem && isRead(ex_ctrl.mem_cmd)
+    mem_reg_store := ex_ctrl.mem && isWrite(ex_ctrl.mem_cmd)
+    mem_reg_sfence := ex_sfence
+    mem_reg_btb_resp := ex_reg_btb_resp
+    mem_reg_flush_pipe := ex_reg_flush_pipe
+    mem_reg_slow_bypass := ex_slow_bypass
+
+    mem_reg_cause := ex_cause
+    mem_reg_inst := ex_reg_inst
+    mem_reg_raw_inst := ex_reg_raw_inst
+    mem_reg_pc := ex_reg_pc
+    mem_reg_wdata := alu.io.out
+    mem_br_taken := alu.io.cmp_out
+
+    when (ex_ctrl.rxs2 && (ex_ctrl.mem || ex_ctrl.rocc || ex_sfence)) {
+     val typ = Mux(ex_ctrl.rocc, log2Ceil(xLen/8).U, ex_ctrl.mem_type)
+     mem_reg_rs2 := new StoreGen(typ, 0.U, ex_rs(1), coreDataBytes).data
+    }
+    when (ex_ctrl.jalr && csr.io.status.debug) {
+     // flush I$ on D-mode JALR to effect uncached fetch without D$ flush
+     mem_ctrl.fence_i := true
+     mem_reg_flush_pipe := true
+    }
+  }
+
+  val mem_breakpoint = (mem_reg_load && bpu.io.xcpt_ld) || (mem_reg_store && bpu.io.xcpt_st)
+  val mem_debug_breakpoint = (mem_reg_load && bpu.io.debug_ld) || (mem_reg_store && bpu.io.debug_st)
+  val (mem_new_xcpt, mem_new_cause) = checkExceptions(List(
+    (mem_debug_breakpoint,               UInt(CSR.debugTriggerCause)),
+    (mem_breakpoint,                     UInt(Causes.breakpoint)),
+    (mem_npc_misaligned,                 UInt(Causes.misaligned_fetch))))
+
+  val (mem_xcpt, mem_cause) = checkExceptions(List(
+    (mem_reg_xcpt_interrupt || mem_reg_xcpt, mem_reg_cause),
+    (mem_reg_valid && mem_new_xcpt,          mem_new_cause)))
+
+  val dcache_kill_mem = mem_reg_valid && mem_ctrl.wxd && io.dmem.replay_next // structural hazard on writeback port
+  val fpu_kill_mem = mem_reg_valid && mem_ctrl.fp && io.fpu.nack_mem
+  val replay_mem  = dcache_kill_mem || mem_reg_replay || fpu_kill_mem
+  val killm_common = dcache_kill_mem || take_pc_wb || mem_reg_xcpt || !mem_reg_valid
+  div.io.kill := killm_common && Reg(next = div.io.req.fire())
+  val ctrl_killm = killm_common || mem_xcpt || fpu_kill_mem
+```
