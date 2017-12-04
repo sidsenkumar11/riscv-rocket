@@ -6,15 +6,15 @@ int main(void) {
                   {2, 2, 2, 2},
                   {3, 3, 3, 3},
                   {4, 4, 4, 4}};
- 
+
   int mat2[4][4] = { {1, 1, 1, 1},
                   {2, 2, 2, 2},
                   {3, 3, 3, 3},
                   {4, 4, 4, 4}};
   int res[4][4];
 
-  printf("Hello world!\\n");
-  int cnt, i, j;
+  printf("Hello world!\n");
+  int cnt, i, j, k;
   for (cnt = 0; cnt < 1000; cnt++) {
     for (i = 0; i < 4; i++) {
       for (j = 0; j < 4; j++) {
@@ -26,7 +26,7 @@ int main(void) {
     }
   }
 
-  printf("Resulting matrix is \n");
+  printf("Resulting matrix is: \n");
   for (i = 0; i < 4; i++) {
     for (j = 0; j < 4; j++) {
       printf("%d", res[i][j]);
