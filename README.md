@@ -58,8 +58,8 @@ RISC-V (pronounced “risk-five”) is a new ISA designed to support computer ar
 The base instructions of the RISC-V ISA are similar to those of other RISC instruction sets, such as MIPS or OpenRISC. For a quick overview of the ISA instructions, page 2 of <a href="http://www-inst.eecs.berkeley.edu/~cs250/fa13/handouts/lab2-riscv.pdf" target="_blank">http://www-inst.eecs.berkeley.edu/~cs250/fa13/handouts/lab2-riscv.pdf</a> has been reproduced here.
 
 <p align="center">
-![RISCV-v1](images/riscv-v1.png?raw=true)
-![RISCV-v1](images/riscv-v2.png?raw=true)
+![RISCV-v1](https://github.com/sidsenkumar11/riscv-rocket/blob/master/images/riscv-v1.png?raw=true)
+![RISCV-v1](https://github.com/sidsenkumar11/riscv-rocket/blob/master/images/riscv-v2.png?raw=true)
 </p>
 
 ### Chisel Framework
@@ -240,7 +240,7 @@ Once you have generated the binaries and placed them on the SD card, eject the S
 To interface with the board via the USB cable, I downloaded and installed the program <a href="https://ttssh2.osdn.jp/index.html.en" target="_blank">Tera Term</a>. After installing Tera Term, configure it so that its Serial settings match the following. The port may be different but the important value to configure is the Baud rate, which defines the rate at which information may be transferred on the channel.
 
 <p align="center">
-![RISCV-v1](images/Tera_Term_settings.png?raw=true)
+![RISCV-v1](https://github.com/sidsenkumar11/riscv-rocket/blob/master/images/Tera_Term_settings.png?raw=true)
 </p>
 
 After downloading Tera Term and modifying the settings, plug in the Zybo via the USB cable. Turn the switch on and wait for a minute to let the Linux system boot up. Finally, start Tera Term and create a new serial connection. You should be asked for a login prompt; use the username "root" and password "root". You are now accessing the Linux system running on the ARM core and can use the `fesvr-zynq` program to interact with the Rocket Core. You could even mount the SD card and start running RISC-V Linux by doing the following.
