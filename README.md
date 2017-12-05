@@ -23,9 +23,11 @@ Last update: 12/4/17
          * [System Stack](#system-stack)
          * [RISC-V Binaries on Pre-Built Images for ARM Core](#risc-v-binaries-on-pre-built-images-for-arm-core)
       * [Generating Pre-Built Binaries and Running on Zybo](#generating-pre-built-binaries-and-running-on-zybo)
+      * [Generating New Binaries to Run on Zybo](#generating-new-binaries-to-run-on-zybo)
    * [Rocket Chip Architecture](#rocket-chip-architecture)
       * [Configuring Rocket Chip Memory](#configuring-rocket-chip-memory)
       * [Fence Registers](#fence-registers)
+      * [Testing](#testing)
 
 # Introduction
 
@@ -236,6 +238,14 @@ After downloading Tera Term and modifying the settings, plug in the Zybo via the
 mkdir /sdcard
 mount /dev/mmcblk0p1 /sdcard
 ./fesvr-zynq +disk=/sdcard/riscv/root.bin /sdcard/riscv/vmlinux
+```
+
+## Generating New Binaries to Run on Zybo
+To generate new binaries for Zybo, you will need to download and install the Vivado toolchain version 2016.2 as well as the SDK. The build scripts will not work for any other version of Vivado so be sure that the version matches! Afterwards, add the following lines to your .bashrc so that the scripts can be sourced.
+
+```
+export XILINXD_LICENSE_FILE=/opt/Xilinx/Xilinx_SDAccel_Gearshaft.lic:/opt/Xilinx/Xilinx_vivado_gearshaft.lic
+source /opt/Xilinx/Vivado/2016.2/settings64.sh
 ```
 
 # Rocket Chip Architecture
