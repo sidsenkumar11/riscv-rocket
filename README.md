@@ -7,32 +7,32 @@ This page documents the setup process for building Rocket Cores to work on Zynq 
 Last update: 12/4/17
 
 # Table of Contents
-
    * [Rocket Core on Zynq FPGAs](#rocket-core-on-zynq-fpgas)
-      * [Introduction](#introduction)
-         * [Terms and Knowledge](#terms-and-knowledge)
-            * [FPGAs and Zynq-7000](#fpgas-and-zynq-7000)
-            * [ISAs and RISC-V](#isas-and-risc-v)
-         * [Chisel Framework](#chisel-framework)
-            * [Installing Chisel](#installing-chisel)
-            * [Chisel Tutorial](#chisel-tutorial)
-         * [Rocket Chip Generator Installation](#rocket-chip-generator-installation)
-      * [Rocket Chip Project Structure](#rocket-chip-project-structure)
-         * [Rocket Chip Generator Repository](#rocket-chip-generator-repository)
-         * [Rocket Chip on Zynq FPGAs](#rocket-chip-on-zynq-fpgas)
-            * [System Stack](#system-stack)
-            * [RISC-V Binaries on Pre-Built Images for ARM Core](#risc-v-binaries-on-pre-built-images-for-arm-core)
-         * [Generating Pre-Built Binaries and Running on Zybo](#generating-pre-built-binaries-and-running-on-zybo)
-      * [Rocket Chip Architecture](#rocket-chip-architecture)
-         * [Configuring Rocket Chip Memory](#configuring-rocket-chip-memory)
-         * [Fence Registers](#fence-registers)
+   * [Table of Contents](#table-of-contents)
+   * [Introduction](#introduction)
+      * [Terms and Knowledge](#terms-and-knowledge)
+         * [FPGAs and Zynq-7000](#fpgas-and-zynq-7000)
+         * [ISAs and RISC-V](#isas-and-risc-v)
+      * [Chisel Framework](#chisel-framework)
+         * [Installing Chisel](#installing-chisel)
+         * [Chisel Tutorial](#chisel-tutorial)
+      * [Rocket Chip Generator Installation](#rocket-chip-generator-installation)
+   * [Rocket Chip Project Structure](#rocket-chip-project-structure)
+      * [Rocket Chip Generator Repository](#rocket-chip-generator-repository)
+      * [Rocket Chip on Zynq FPGAs](#rocket-chip-on-zynq-fpgas)
+         * [System Stack](#system-stack)
+         * [RISC-V Binaries on Pre-Built Images for ARM Core](#risc-v-binaries-on-pre-built-images-for-arm-core)
+      * [Generating Pre-Built Binaries and Running on Zybo](#generating-pre-built-binaries-and-running-on-zybo)
+   * [Rocket Chip Architecture](#rocket-chip-architecture)
+      * [Configuring Rocket Chip Memory](#configuring-rocket-chip-memory)
+      * [Fence Registers](#fence-registers)
 
-## Introduction
+# Introduction
 
-### Terms and Knowledge
+## Terms and Knowledge
 Some terms and background knowledge will be essential to understanding this research project. The pre-requisite knowledge will be explained in the following sections.
 
-#### FPGAs and Zynq-7000
+### FPGAs and Zynq-7000
 An FPGA is a programmable hardware board. It makes prototyping hardware designs fast, cheap, and simple. At Georgia Tech, an undergraduate computer science student's first exposure to FPGA development might be in CS 3220 - Processor Design, where the student is challenged to implement a simple five stage pipelined processor on an FPGA.
 
 In this research project, we worked with a specific brand and model FPGA board. The Zybo Zynq-7000, distributed by Digilent, is a ready-to-use, entry-level FPGA. It contains a dual-core ARM A9 processor and supports several peripheral components such as Ethernet, video, and audio. Note that the Zybo Zynq-7000 has been replaced by the Zybo Z7-10 as of September 21st, 2017. Purchase information and a feature list can be found here:
@@ -50,7 +50,7 @@ The base board only comes with the FPGA itself and does not include any cables, 
 Here is a link to the official Zybo reference manual for more information on the Zybo's I/O ports and capabilities:<br>
 <a href="https://reference.digilentinc.com/_media/zybo:zybo_rm.pdf" target="_blank">Zynq-7000 Zybo Reference Manual</a>
 
-#### ISAs and RISC-V
+### ISAs and RISC-V
 ISA is an acronym for Instruction Set Architecture. An ISA is a specification for a machine / assembly language. It defines the types of instructions available on a computer, such as ALU operations, types of branches, and memory operations. The implementation of an ISA is independent from the design of the ISA. This means that implementations can vary from vendor to vendor so long as the final circuit satisfies the requirements of the ISA. As an example, x86 is an ISA that both Intel and AMD have implemented on their CPUs to varying successes.
 
 RISC-V (pronounced “risk-five”) is a new ISA designed to support computer architecture research and education. It was developed by the Berkeley Architecture Group (now part of the ASPIRE Lab). The base ISA was designed to be clean, simple, and suitable for direct hardware implementation. More information can be found <a href="https://riscv.org/" target="_blank">here</a> on RISCV's official website.
@@ -62,13 +62,13 @@ The base instructions of the RISC-V ISA are similar to those of other RISC instr
 <img src="images/riscv-v2.png" />
 </p>
 
-### Chisel Framework
+## Chisel Framework
 
 Chisel is an open-source hardware construction language developed at UC Berkeley that supports advanced hardware design using highly parameterized generators. It allows users to design hardware in a higher-level programming language, Scala, instead of directly interfacing with Verilog.
 
 <a href="https://github.com/ucb-bar/chisel-tutorial/wiki" target="_blank">Here</a> is a succinct yet informative Wiki-Book containing information on the most important features of Chisel. Chisel can be set up from scratch on a Unix-based system using the following commands. These commands are just a compiled version of all the installation processes found on various tutorials for how to install Java, Scala, and Chisel.
 
-#### Installing Chisel
+### Installing Chisel
 1. Chisel is a hardware construction language built in Scala. Scala requires the JVM to run, so first install the Java 8 SDK.
 ```
 sudo add-apt-repository ppa:webupd8team/java
@@ -105,7 +105,7 @@ sudo make install
 cd ..
 ```
 
-#### Chisel Tutorial
+### Chisel Tutorial
 Once you have installed Chisel, you can check that it works properly by downloading the Chisel Tutorial and running a basic test.
 Interested users can learn the basics of Chisel (and Scala) in a small tutorial developed by Berkeley here:
 <a href="https://github.com/ucb-bar/chisel-tutorial" target="_blank">https://github.com/ucb-bar/chisel-tutorial</a>
@@ -125,7 +125,7 @@ sbt
 > test:run-main problems.Launcher Mux2
 ```
 
-### Rocket Chip Generator Installation
+## Rocket Chip Generator Installation
 Originally developed by the Berkeley Architecture Research group (UCBAR), the Rocket Chip Generator creates instances of the RISC-V architecture in Verilog. Written using Chisel, the Rocket Chip Generator can be quickly parameterized to build different configurations of RISC-V hardware. The Rocket Chip open-source repository contains all the necessary tools to build and run the chip and can be found here: <a href="https://github.com/freechipsproject/rocket-chip" target="_blank">https://github.com/freechipsproject/rocket-chip</a>.
 
 Here are the steps to download and set-up the Rocket Chip Generator. Before running this, please make sure you have installed all the Scala and Chisel dependencies as shown in the previous section. Without them, running `build.sh` will fail and you will have to re-do these steps. Note that the recursive submodule update and the build script will take a while, so be prepared to grab a coffee in the meantime.
@@ -158,10 +158,10 @@ spike pk hello
 
 If all went well, your screen should print "Hello world!". For additional debugging help, you may want to consult the riscv-tools GitHub README <a href="https://github.com/riscv/riscv-tools/tree/aca8ec71a3ad9adfc988bdf75306ffe70cbc12e5" target="_blank">here</a>.
 
-## Rocket Chip Project Structure
+# Rocket Chip Project Structure
 Here, we describe the Rocket Chip Generator project structure.
 
-### Rocket Chip Generator Repository
+## Rocket Chip Generator Repository
 First, we will talk about the build repository of the chip. This repository contains sub-repositories using git submodules to manage all the dependencies required to build the Rocket Chip Generator. Here are the included sumodules.
 
 <ol>
@@ -174,10 +174,10 @@ First, we will talk about the build repository of the chip. This repository cont
 	<li><b>riscv-tools</b> - A version of riscv-tools that works with the RTL committed in the rocket-chip repository.</li>
 </ol>
 
-### Rocket Chip on Zynq FPGAs
+## Rocket Chip on Zynq FPGAs
 This section is dedicated to running and configuring Rocket Chips on the  Zybo FPGA. The information here is all taken from the following README: <a href="https://github.com/ucb-bar/fpga-zynq/blob/master/README.md" target="_blank">https://github.com/ucb-bar/fpga-zynq/blob/master/README.md</a>
 
-#### System Stack
+### System Stack
 The goal is to run a RISC-V binary on a Rocket Core instantiated on the Zybo FPGA. This is accomplished with multiple layers of abstraction. Here, we explain each layer and how it will run on the FPGA starting from the top down.
 
 <ol>
@@ -200,34 +200,21 @@ The goal is to run a RISC-V binary on a Rocket Core instantiated on the Zybo FPG
     The FPGA Board contains the FPGA and several I/O devices. When the board is turned on, the contents of the SD card are used to configure the FPGA and boot Linux on the ARM core.
 	</li>
 	<li><b>Development System</b><br>
-    The development system is a PC with an SD card reader. We develop a number of applications on the development system and each of them will get transferred to the FPGA for different purposes.<br><br>
-
-    Second, we also need to transfer the Rocket Core Verilog design on the SD card so that the FPGA can actually run the RISC-V ISA. We can tell the FPGA to run the Rocket Core design by interfacing with the ARM core over USB or SSH. After connecting to the ARM core, we would just run riscv-fesvr with the RISC-V design as an argument.<br><br>
-
-    Finally, we also need to transfer RISC-V Linux and the user application to begin running on the FPGA's Rocket Core. Once the hardware design for Rocket Core is loaded onto the FPGA, it will begin running RISC-V Linux - a Linux distribution compiled entirely in RISC-V. This distribution can then run executable binaries compiled for RISC-V as well.
+    The development system is a PC with an SD card reader. We develop a number of applications on the development system and each of them will get transferred to the FPGA for different purposes.<br><br>Second, we also need to transfer the Rocket Core Verilog design on the SD card so that the FPGA can actually run the RISC-V ISA. We can tell the FPGA to run the Rocket Core design by interfacing with the ARM core over USB or SSH. After connecting to the ARM core, we would just run riscv-fesvr with the RISC-V design as an argument.<br><br>Finally, we also need to transfer RISC-V Linux and the user application to begin running on the FPGA's Rocket Core. Once the hardware design for Rocket Core is loaded onto the FPGA, it will begin running RISC-V Linux - a Linux distribution compiled entirely in RISC-V. This distribution can then run executable binaries compiled for RISC-V as well.
 	</li>
 </ol>
 
-#### RISC-V Binaries on Pre-Built Images for ARM Core
+### RISC-V Binaries on Pre-Built Images for ARM Core
 UC Berkeley provides several pre-built binaries in its fpga-zynq repository so that users can quickly run RISC-V binaries on the FPGA. Some terms to know:  The Xilinx SDK is a software suite that contains toolchains to compile binaries in formats that the Zybo's CPU will understand. Vivado is an IDE for writing hardware designs, compiling binaries for the ARM core, and transferring designs to the FPGA. The binaries provided are as follows:
 
 <ul>
-    <li><b>boot.bin</b> - This is generated by the Xilinx SDK from Vivado and contains three files.</li>
-
-    - A bitstream (rocketchip\_wrapper.bit) which configures the FPGA with the Rocket Chip design. This is the Rocket Chip itself that will be run on the FPGA. We will later see how to create our own bitstreams so we can create different configurations of Rocket Chips.<br>
-
-    - A first stage bootloader (FSBL.elf). This bootloader configures the Zynq system based on the project's block design, so it is built using the Xilinx SDK as well. After the bootloader is finished, it hands control to u-boot.<br>
-
-    - A second stage bootloader (u-boot.elf) that takes configuration information and prepares the ARM processing system for booting Linux. After u-boot finishes, it hands off execution to the ARM Linux kernel.<br>
-
+    <li><b>boot.bin</b> - This is generated by the Xilinx SDK from Vivado and contains three files.<br><br>- A bitstream (rocketchip\_wrapper.bit) which configures the FPGA with the Rocket Chip design. This is the Rocket Chip itself that will be run on the FPGA. We will later see how to create our own bitstreams so we can create different configurations of Rocket Chips.<br> - A first stage bootloader (FSBL.elf). This bootloader configures the Zynq system based on the project's block design, so it is built using the Xilinx SDK as well. After the bootloader is finished, it hands control to u-boot.<br> - A second stage bootloader (u-boot.elf) that takes configuration information and prepares the ARM processing system for booting Linux. After u-boot finishes, it hands off execution to the ARM Linux kernel.<br></li>
     <li><b>ARM Linux (uImage)</b> - The copy of Linux designed to run on the ARM CPU. Within this Linux system, we can run tools like fesvr-zedboard to interact with the RISC-V Rocket Core.</li>
-
     <li><b>ARM RAMDisk (uramdisk.image.gz)</b> - The RAMDisk mounted by the ARM Linux. It contains the root filesystem.</li>
-
     <li><b>devicetree.dtb</b> - Contains information about the ARM core's peripherals for Linux.</li>
 </ul>
 
-### Generating Pre-Built Binaries and Running on Zybo
+## Generating Pre-Built Binaries and Running on Zybo
 ```
 git clone https://github.com/ucb-bar/fpga-zynq.git
 cd fpga-zynq/zybo
@@ -251,11 +238,11 @@ mount /dev/mmcblk0p1 /sdcard
 ./fesvr-zynq +disk=/sdcard/riscv/root.bin /sdcard/riscv/vmlinux
 ```
 
-## Rocket Chip Architecture
+# Rocket Chip Architecture
 
 An overview of the Rocket Core architecture can be seen <a href="http://www.lowrisc.org/docs/tagged-memory-v0.1/rocket-core/" target="_blank">here</a> but in the following sections, we will attempt to summmarize our understanding. Rocket Chip is an in-order chip generator; therefore it does not have a Load-Store Buffer for memory accesses. For an out-of-order chip generator, see the <a href="https://github.com/ucb-bar/riscv-boom" target="_blank">BOOM</a> project.
 
-### Configuring Rocket Chip Memory
+## Configuring Rocket Chip Memory
 To change the configuration of Rocket Chip, you first need to change the configuration file and modify/add what configuration you want.
 
 The `Configs.scala` file with example configurations can be found at `common/src/main/scala/coreplex/Configs.scala`. There are many parameters that can be figured for both the `icache` and the `dcache` such as `rowBits`, `nSets`, `nWays`, `nTLBEntries`, `nMSHRs`, and `blockBytes`.
@@ -275,7 +262,7 @@ make fpga-images-zybo/boot.bin
 
 This should create the project, generate the bitstream, and create a new `boot.bin` to copy onto the SD card that can then be inserted onto the board. To test different memory configurations, Rocket Chip provides us with groundtest/Tracegen.scala. It can generate traces that emit memory accesses in the code to ensure that memory works as it should.
 
-### Fence Registers
+## Fence Registers
 
 Memory fence instructions are supported in the pipeline as they are supported by the RISC-V ISA. The FENCE ensures that all operations before the fence are observed before any operation after the fence. This may be necessary at times since RISC-V allows the order of loads and stores performed by one thread to be different when seen by another to increase memory system performance.
 
@@ -369,3 +356,19 @@ The mem stage code has been reproduced here for reference, though the pipeline c
   div.io.kill := killm_common && Reg(next = div.io.req.fire())
   val ctrl_killm = killm_common || mem_xcpt || fpu_kill_mem
 ```
+
+## Testing
+To test different memory configurations, one needs to write and compile RISC-V executables. This can be done using the riscv toolchain that was installed in earlier sections. In benchmark.c, we have written a simple program to test matrix multiplication capabilities in RISC-V. To compile the program, cd into the directory where the riscv toolchain has been built (likely `riscv-built-toolchain`). Then enter the following:
+
+```
+$ riscv64-unknown-elf-gcc -o benchmark benchmark.c
+$ spike pk benchmark
+Hello world!
+Resulting matrix is:
+10101010
+20202020
+30303030
+40404040
+```
+
+As you can see in the output, the benchmark compiles and executes on the simulator correctly. To run it on the FPGA, simply copy the `benchmark` binary to the board and execute it using fesvr-zynq.
