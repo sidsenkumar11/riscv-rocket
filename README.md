@@ -24,6 +24,7 @@ Last update: 12/4/17
          * [RISC-V Binaries on Pre-Built Images for ARM Core](#risc-v-binaries-on-pre-built-images-for-arm-core)
       * [Generating Pre-Built Binaries and Running on Zybo](#generating-pre-built-binaries-and-running-on-zybo)
       * [Generating New Binaries to Run on Zybo](#generating-new-binaries-to-run-on-zybo)
+      * [Boom on FPGA](#boom-on-fpga)
    * [Rocket Chip Architecture](#rocket-chip-architecture)
       * [Configuring Rocket Chip Memory](#configuring-rocket-chip-memory)
       * [Fence Registers](#fence-registers)
@@ -247,6 +248,58 @@ To generate new binaries for Zybo, you will need to download and install the Viv
 export XILINXD_LICENSE_FILE=/opt/Xilinx/Xilinx_SDAccel_Gearshaft.lic:/opt/Xilinx/Xilinx_vivado_gearshaft.lic
 source /opt/Xilinx/Vivado/2016.2/settings64.sh
 ```
+
+## Boom on FPGA
+BOOM is not supported for FPGA directly by Berkeley. Therefore specific commits need to be used in order to be sure BOOM can be put on the FPGA. It was noted that the ZC706 should be used because the other FPGA's could not support BOOM.
+
+First the repo that was made specifically for putting boom onto the FPGA needs to be cloned.
+
+```
+git clone https://github.com/donggyukim/fpga-zynq.git
+cd fpga-zynq/
+```
+
+Then we need to initialize a specific rocket chip repo commit inside that repo.
+
+```
+cd rocket-chip/
+git init
+git remote add origin https://github.com/freechipsproject/rocket-chip.git
+git pull
+git checkout boom
+git checkout d8379e2fb8902cb8084d22ed09470fd134b221c6
+```
+
+After that, we need to checkout a specific boom commit.
+
+```
+cd boom/
+git init
+git remote add origin https://github.com/ucb-bar/riscv-boom.git
+git pull
+git checkout 30d8b3cd9651a4098cdf5f20737d4f167db6ed9d
+```
+
+The risc-v tools need to be built.
+
+```
+cd ../riscv-tools/
+export RISCV=/boom_fpga/fpga-zynq/rocket-chip/riscv-tools
+git submodule update --init --recursive
+./build.sh
+```
+
+Finally, vivado needs to be sourced and the project files can then be built. The configuration can be changed by the CONFIG flag when making rocket.
+
+```
+cd ../../zc706/
+source /opt/Xilinx/Vivado/2016.2/settings64.sh
+make rocket
+make project
+make fpga-images-zc706/boot.bin
+```
+
+The boot.bin can be put on an SD card and then inserted into a ZC706.
 
 # Rocket Chip Architecture
 
